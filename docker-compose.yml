@@ -1,0 +1,42 @@
+# IPv6 only works with compose v2!
+# https://github.com/mistyhacks/docker.github.io/blob/328e272abbf119e56faa0afc6318f61e235e246c/compose/compose-file/index.md#ipv4_address-ipv6_address
+
+version: "2.4"
+
+networks:
+  test_network:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 2001:3984:3989::/64
+
+services:
+  ping:
+    environment:
+      - CARGO_HOME=/yume
+    image: rustlang/rust:nightly
+    networks:
+      test_network:
+        ipv6_address: 2001:3984:3989::10
+    ports:
+      - "3000"
+      - "3001"
+    tty: true
+    volumes:
+      - ./:/yume
+
+  pong:
+    environment:
+      - CARGO_HOME=/yume
+    image: rustlang/rust:nightly
+    networks:
+      test_network:
+        ipv6_address: 2001:3984:3989::20
+    ports:
+      - "3000"
+      - "3001"
+    tty: true
+    volumes:
+      - ./:/yume
