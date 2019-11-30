@@ -1,8 +1,11 @@
-mod async_utils;
 mod config;
 mod message;
+mod stdin_utils;
+mod udp_utils;
 
-use crate::async_utils::{read_from_stdin, start_udp_server};
+use crate::stdin_utils::prompt;
+use crate::udp_utils::{start_udp_client, start_udp_server};
+
 use async_std::task;
 use std::env::args;
 use std::sync::Arc;
@@ -32,6 +35,10 @@ fn main() {
             start_udp_server(cloned_peers_ip).await;
         });
 
-        read_from_stdin(peers_ip.clone()).await.unwrap();
+        let secret_key = prompt(Some(String::from("🔑 Enter secret key:"))).await;
+
+        dbg!(secret_key);
+
+        start_udp_client(peers_ip.clone()).await.unwrap();
     });
 }

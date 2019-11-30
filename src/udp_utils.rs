@@ -1,4 +1,4 @@
-use crate::config::{CLIENT_PORT, ERROR_MESSAGES, SERVER_PORT};
+use crate::config::{CLIENT_PORT, ERROR_MESSAGES, SERVER_PORT, TIMEOUT};
 use crate::message::Message;
 
 use ansi_term::Colour::{Purple, Yellow};
@@ -7,6 +7,10 @@ use async_std::{io, task};
 use std::sync::Arc;
 use std::time::Duration;
 
+fn get_content_from_buffer(buffer: &[u8], number_of_bytes: usize) -> String {
+    String::from_utf8_lossy(&buffer[..number_of_bytes]).to_string()
+}
+
 /// Some doc.
 pub async fn start_udp_server(peers_ip: Arc<(String, String)>) {
     let mut buffer = vec![0u8; 1024];
@@ -14,12 +18,17 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>) {
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &SERVER_PORT.to_string()].join("")).await {
         Ok(socket) => loop {
             if let Ok(received) = socket.recv_from(&mut buffer).await {
-                let (n, peer) = received;
-                let p = Message::deserialize(String::from_utf8_lossy(&buffer[..n]).to_string());
+                let (number_of_bytes, origin) = received;
 
-                println!("⬅️ {}", Purple.paint(p.content));
+                println!(
+                    "⬅️ {}",
+                    Purple.paint(
+                        Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes))
+                            .content
+                    )
+                );
 
-                match socket.send_to(&buffer[..n], &peer).await {
+                match socket.send_to(&buffer[..number_of_bytes], &origin).await {
                     Ok(sent) => {
                         // println!(
                         //     "Sent {} out of {} bytes to {}",
@@ -41,6 +50,10 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
+
+            // TODO
+            Message::encrypt(m.serialize());
+
             match socket
                 .send_to(
                     m.serialize().as_bytes(),
@@ -51,15 +64,24 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
                 Ok(_) => {
                     let mut buffer = vec![0u8; 1024];
 
-                    match io::timeout(Duration::from_secs(5), async {
+                    match io::timeout(Duration::from_secs(TIMEOUT), async {
                         socket.recv_from(&mut buffer).await
                     })
                     .await
                     {
                         Ok(received) => {
-                            let (n, _) = received;
+                            let number_of_bytes = received.0;
 
-                            println!("➡️ {}", Yellow.paint(String::from_utf8_lossy(&buffer[..n])));
+                            println!(
+                                "➡️ {}",
+                                Yellow.paint(
+                                    Message::deserialize(get_content_from_buffer(
+                                        &buffer,
+                                        number_of_bytes
+                                    ))
+                                    .content
+                                )
+                            );
                         }
                         Err(_) => {
                             eprintln!("{}", ERROR_MESSAGES[0]);
@@ -73,7 +95,7 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
     }
 }
 
-pub async fn read_from_stdin(peers_ip: Arc<(String, String)>) -> Result<(), ()> {
+pub async fn start_udp_client(peers_ip: Arc<(String, String)>) -> Result<(), ()> {
     let stdin = io::stdin();
     let mut line = String::new();
 
