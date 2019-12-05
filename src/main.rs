@@ -1,8 +1,11 @@
 mod config;
+mod key;
 mod message;
 mod stdin_utils;
 mod udp_utils;
 
+use crate::key::Key;
+use crate::message::Message;
 use crate::stdin_utils::prompt;
 use crate::udp_utils::{start_udp_client, start_udp_server};
 
@@ -22,8 +25,8 @@ fn main() {
     task::block_on(async {
         let peers_ip = get_peers_ip();
 
-        if peers_ip.is_err() {
-            eprintln!("{}", peers_ip.clone().unwrap_err());
+        if let Err(error) = peers_ip {
+            eprintln!("{}", error);
 
             return;
         }
@@ -35,9 +38,22 @@ fn main() {
             start_udp_server(cloned_peers_ip).await;
         });
 
-        let secret_key = prompt(Some(String::from("🔑 Enter secret key:"))).await;
+        let secret_key = prompt(Some(String::from(
+            "🔑 Enter secret key or click enter to generate a new one:",
+        )))
+        .await;
 
-        dbg!(secret_key);
+        if let Err(error) = secret_key {
+            eprintln!("{}", error);
+
+            return;
+        }
+
+        Key::new(if secret_key.unwrap().is_empty() {
+            None
+        } else {
+            Some(secret_key)
+        });
 
         start_udp_client(peers_ip.clone()).await.unwrap();
     });

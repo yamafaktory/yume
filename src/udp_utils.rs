@@ -52,7 +52,7 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
         Ok(socket) => {
 
             // TODO
-            Message::encrypt(m.serialize());
+            // Message::encrypt(m.serialize());
 
             match socket
                 .send_to(

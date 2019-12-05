@@ -11,10 +11,11 @@ pub async fn prompt(question: Option<String>) -> Result<String, String> {
     match stdin.read_line(&mut line).await {
         Ok(_) => {
             let input = line.clone();
+            let mut lines = input.lines();
 
             line.clear();
 
-            Ok(input)
+            Ok(lines.next().unwrap().to_string())
         }
         Err(_) => Err(String::from("Can't read stdin!")),
     }
