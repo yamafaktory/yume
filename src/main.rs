@@ -5,7 +5,6 @@ mod stdin_utils;
 mod udp_utils;
 
 use crate::key::Key;
-use crate::message::Message;
 use crate::stdin_utils::prompt;
 use crate::udp_utils::{start_udp_client, start_udp_server};
 
@@ -67,6 +66,6 @@ fn main() {
 
         println!("{}", key);
 
-        start_udp_client(peers_ip.clone()).await.unwrap();
+        start_udp_client(peers_ip.clone(), key).await.unwrap();
     });
 }

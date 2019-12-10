@@ -17,7 +17,7 @@ impl Key {
                 key_value.copy_from_slice(&value[..to_array.len()]);
 
                 Ok(key_value)
-            },
+            }
             Err(_) => Err(String::from("Can't decode key!")),
         }
     }
@@ -39,11 +39,7 @@ impl Key {
     }
 
     pub fn encrypt_message(&self, message: String) -> String {
-        let tag = hmac::sign(&self.secret, message.as_bytes());
-
-        dbg!(tag);
-
-        "encrypted".to_string()
+        encode(&hmac::sign(&self.secret, message.as_bytes()).as_ref().to_vec())
     }
 
     pub fn generate_value() -> [u8; digest::SHA384_OUTPUT_LEN] {

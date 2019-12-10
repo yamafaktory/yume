@@ -1,6 +1,6 @@
 use crate::config::{CLIENT_PORT, ERROR_MESSAGES, SERVER_PORT, TIMEOUT};
-use crate::message::Message;
 use crate::key::Key;
+use crate::message::Message;
 
 use ansi_term::Colour::{Purple, Yellow};
 use async_std::net::UdpSocket;
@@ -46,15 +46,11 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>) {
     }
 }
 
-pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: Key) {
-    let message = Message::new(content.to_string());
+pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: &Key) {
+    let message = Message::new(key.encrypt_message(content.to_string()));
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
-
-            // TODO
-            // Message::encrypt(m.serialize());
-
             match socket
                 .send_to(
                     message.serialize().as_bytes(),
@@ -96,7 +92,7 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, ke
     }
 }
 
-pub async fn start_udp_client(peers_ip: Arc<(String, String)>) -> Result<(), ()> {
+pub async fn start_udp_client(peers_ip: Arc<(String, String)>, key: Key) -> Result<(), ()> {
     let stdin = io::stdin();
     let mut line = String::new();
 
@@ -110,7 +106,7 @@ pub async fn start_udp_client(peers_ip: Arc<(String, String)>) -> Result<(), ()>
                 }
 
                 task::block_on(async {
-                    send_udp_message(Arc::clone(&peers_ip), &line).await;
+                    send_udp_message(Arc::clone(&peers_ip), &line, &key).await;
                 });
 
                 line.clear();
