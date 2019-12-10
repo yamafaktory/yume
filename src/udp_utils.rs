@@ -1,5 +1,6 @@
 use crate::config::{CLIENT_PORT, ERROR_MESSAGES, SERVER_PORT, TIMEOUT};
 use crate::message::Message;
+use crate::key::Key;
 
 use ansi_term::Colour::{Purple, Yellow};
 use async_std::net::UdpSocket;
@@ -45,8 +46,8 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>) {
     }
 }
 
-pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
-    let m = Message::new(content.to_string());
+pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: Key) {
+    let message = Message::new(content.to_string());
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
@@ -56,7 +57,7 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str) {
 
             match socket
                 .send_to(
-                    m.serialize().as_bytes(),
+                    message.serialize().as_bytes(),
                     [peers_ip.1.as_str(), ":", &SERVER_PORT.to_string()].join(""),
                 )
                 .await

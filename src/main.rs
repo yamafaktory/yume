@@ -43,17 +43,29 @@ fn main() {
         )))
         .await;
 
-        if let Err(error) = secret_key {
-            eprintln!("{}", error);
+        let key = match secret_key {
+            Ok(secret_key) => {
+                Key::new(if secret_key.is_empty() {
+                    None
+                } else {
+                    match Key::base64_decode(secret_key) {
+                        Ok(secret_key) => Some(secret_key),
+                        Err(error) => {
+                            eprintln!("{}", error);
 
-            return;
-        }
+                            return;
+                        }
+                    }
+                })
+            }
+            Err(error) => {
+                eprintln!("{}", error);
 
-        Key::new(if secret_key.unwrap().is_empty() {
-            None
-        } else {
-            Some(secret_key)
-        });
+                return;
+            }
+        };
+
+        println!("{}", key);
 
         start_udp_client(peers_ip.clone()).await.unwrap();
     });
