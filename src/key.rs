@@ -48,11 +48,11 @@ impl Key {
         key_value
     }
 
-    pub fn verify_message(&self, message: String) -> Result<(), String> {
-        let tag = hmac::sign(&self.secret, message.as_bytes());
+    pub fn verify_message(&self, message: &[u8; digest::SHA384_OUTPUT_LEN]) -> Result<(), String> {
+        let tag = hmac::sign(&self.secret, message);
         let verify_key = hmac::Key::new(hmac::HMAC_SHA256, self.value.as_ref());
 
-        match hmac::verify(&verify_key, message.as_bytes(), tag.as_ref()) {
+        match hmac::verify(&verify_key, message, tag.as_ref()) {
             Ok(_) => Ok(()),
             Err(_) => Err("encrypted".to_string()),
         }

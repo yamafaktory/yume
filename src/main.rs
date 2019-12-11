@@ -33,30 +33,24 @@ fn main() {
         let peers_ip = Arc::new(peers_ip.unwrap());
         let cloned_peers_ip = peers_ip.clone();
 
-        task::spawn(async move {
-            start_udp_server(cloned_peers_ip).await;
-        });
-
         let secret_key = prompt(Some(String::from(
             "🔑 Enter secret key or click enter to generate a new one:",
         )))
         .await;
 
         let key = match secret_key {
-            Ok(secret_key) => {
-                Key::new(if secret_key.is_empty() {
-                    None
-                } else {
-                    match Key::base64_decode(secret_key) {
-                        Ok(secret_key) => Some(secret_key),
-                        Err(error) => {
-                            eprintln!("{}", error);
+            Ok(secret_key) => Key::new(if secret_key.is_empty() {
+                None
+            } else {
+                match Key::base64_decode(secret_key) {
+                    Ok(secret_key) => Some(secret_key),
+                    Err(error) => {
+                        eprintln!("{}", error);
 
-                            return;
-                        }
+                        return;
                     }
-                })
-            }
+                }
+            }),
             Err(error) => {
                 eprintln!("{}", error);
 
@@ -65,6 +59,13 @@ fn main() {
         };
 
         println!("{}", key);
+
+        let key = Arc::new(key);
+        let cloned_key = key.clone();
+
+        task::spawn(async move {
+            start_udp_server(cloned_peers_ip, cloned_key).await;
+        });
 
         start_udp_client(peers_ip.clone(), key).await.unwrap();
     });

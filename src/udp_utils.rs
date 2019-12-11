@@ -13,21 +13,23 @@ fn get_content_from_buffer(buffer: &[u8], number_of_bytes: usize) -> String {
 }
 
 /// Some doc.
-pub async fn start_udp_server(peers_ip: Arc<(String, String)>) {
+pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
     let mut buffer = vec![0u8; 1024];
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &SERVER_PORT.to_string()].join("")).await {
         Ok(socket) => loop {
             if let Ok(received) = socket.recv_from(&mut buffer).await {
                 let (number_of_bytes, origin) = received;
-
-                println!(
-                    "⬅️ {}",
-                    Purple.paint(
-                        Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes))
-                            .content
-                    )
-                );
+                match Message::base64_decode(
+                    Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes)).content,
+                ) {
+                    Ok(message) => {
+                        let verified = key.verify_message(&message);
+                        // println!("⬅️ {}", Purple.paint(verified));
+                        println!("{:?}", verified);
+                    }
+                    Err(error) => eprintln!("{}", error),
+                }
 
                 match socket.send_to(&buffer[..number_of_bytes], &origin).await {
                     Ok(sent) => {
@@ -92,7 +94,7 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, ke
     }
 }
 
-pub async fn start_udp_client(peers_ip: Arc<(String, String)>, key: Key) -> Result<(), ()> {
+pub async fn start_udp_client(peers_ip: Arc<(String, String)>, key: Arc<Key>) -> Result<(), ()> {
     let stdin = io::stdin();
     let mut line = String::new();
 
