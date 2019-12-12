@@ -20,14 +20,11 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
         Ok(socket) => loop {
             if let Ok(received) = socket.recv_from(&mut buffer).await {
                 let (number_of_bytes, origin) = received;
-                match Message::base64_decode(
-                    Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes)).content,
-                ) {
-                    Ok(message) => {
-                        let verified = key.verify_message(&message);
-                        // println!("⬅️ {}", Purple.paint(verified));
-                        println!("{:?}", verified);
-                    }
+                let message =
+                    Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes));
+
+                match key.verify_message_signature(&message) {
+                    Ok(_) => println!("⬅️ {}", Purple.paint(message.content)),
                     Err(error) => eprintln!("{}", error),
                 }
 
@@ -48,8 +45,8 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
     }
 }
 
-pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: &Key) {
-    let message = Message::new(key.encrypt_message(content.to_string()));
+pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: Arc<Key>) {
+    let message = Message::new(content.to_string(), key);
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
@@ -108,7 +105,7 @@ pub async fn start_udp_client(peers_ip: Arc<(String, String)>, key: Arc<Key>) ->
                 }
 
                 task::block_on(async {
-                    send_udp_message(Arc::clone(&peers_ip), &line, &key).await;
+                    send_udp_message(Arc::clone(&peers_ip), &line, Arc::clone(&key)).await;
                 });
 
                 line.clear();

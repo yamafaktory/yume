@@ -1,29 +1,22 @@
-use base64::decode;
-use ring::digest;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+
+use crate::key::Key;
 
 #[derive(Serialize, Deserialize)]
 pub struct Message {
     pub content: String,
+    pub signature: String,
 }
 
 impl Message {
-    pub fn base64_decode(value: String) -> Result<[u8; digest::SHA384_OUTPUT_LEN], String> {
-        match decode(&value) {
-            Ok(value) => {
-                let mut key_value = [0; digest::SHA384_OUTPUT_LEN];
-                let to_array = &value[..key_value.len()];
+    pub fn new(content: String, key: Arc<Key>) -> Self {
+        let cloned_content = content.clone();
 
-                key_value.copy_from_slice(&value[..to_array.len()]);
-
-                Ok(key_value)
-            }
-            Err(_) => Err(String::from("Can't base64 decode message!")),
+        Message {
+            content,
+            signature: key.encode_message_signature(cloned_content),
         }
-    }
-
-    pub fn new(content: String) -> Self {
-        Message { content }
     }
 
     pub fn serialize(&self) -> String {

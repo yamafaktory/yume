@@ -2,6 +2,8 @@ use base64::{decode, encode};
 use ring::{digest, hmac, rand};
 use std::fmt;
 
+use crate::message::Message;
+
 pub struct Key {
     pub value: [u8; digest::SHA384_OUTPUT_LEN],
     pub secret: hmac::Key,
@@ -29,7 +31,7 @@ impl Key {
     pub fn new(value: Option<[u8; digest::SHA384_OUTPUT_LEN]>) -> Self {
         let value = match value {
             Some(value) => value,
-            None => Key::generate_value(),
+            None => Key::generate_hmac_value(),
         };
 
         Key {
@@ -38,23 +40,29 @@ impl Key {
         }
     }
 
-    pub fn encrypt_message(&self, message: String) -> String {
-        encode(&hmac::sign(&self.secret, message.as_bytes()).as_ref().to_vec())
+    pub fn encode_message_signature(&self, message: String) -> String {
+        encode(
+            &hmac::sign(&self.secret, message.as_bytes())
+                .as_ref()
+                .to_vec(),
+        )
     }
 
-    pub fn generate_value() -> [u8; digest::SHA384_OUTPUT_LEN] {
+    pub fn generate_hmac_value() -> [u8; digest::SHA384_OUTPUT_LEN] {
         let random = rand::SystemRandom::new();
         let key_value: [u8; digest::SHA384_OUTPUT_LEN] = rand::generate(&random).unwrap().expose();
+
         key_value
     }
 
-    pub fn verify_message(&self, message: &[u8; digest::SHA384_OUTPUT_LEN]) -> Result<(), String> {
-        let tag = hmac::sign(&self.secret, message);
-        let verify_key = hmac::Key::new(hmac::HMAC_SHA256, self.value.as_ref());
+    pub fn verify_message_signature(&self, message: &Message) -> Result<(), String> {
+        let content = message.content.clone();
+        let signature = self.encode_message_signature(content);
 
-        match hmac::verify(&verify_key, message, tag.as_ref()) {
-            Ok(_) => Ok(()),
-            Err(_) => Err("encrypted".to_string()),
+        if signature.as_str() == message.signature {
+            Ok(())
+        } else {
+            Err(String::from("Can't base64 decode message signature!"))
         }
     }
 }
