@@ -15,6 +15,7 @@ fn get_content_from_buffer(buffer: &[u8], number_of_bytes: usize) -> String {
 /// Some doc.
 pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
     let mut buffer = vec![0u8; 1024];
+    let key = &key;
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &SERVER_PORT.to_string()].join("")).await {
         Ok(socket) => loop {
@@ -24,7 +25,7 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
                     Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes));
 
                 match key.verify_message_signature(&message) {
-                    Ok(_) => println!("⬅️ {}", Purple.paint(message.content)),
+                    Ok(_) => println!("⬅️ {}", Purple.paint(message.decrypt(key.clone()))),
                     Err(error) => eprintln!("{}", error),
                 }
 
@@ -46,7 +47,8 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
 }
 
 pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, key: Arc<Key>) {
-    let message = Message::new(content.to_string(), key);
+    let cloned_key = key.clone();
+    let message = Message::new(content.to_string(), cloned_key);
 
     match UdpSocket::bind([peers_ip.0.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
@@ -67,17 +69,12 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, ke
                     {
                         Ok(received) => {
                             let number_of_bytes = received.0;
+                            let message = Message::deserialize(get_content_from_buffer(
+                                &buffer,
+                                number_of_bytes,
+                            ));
 
-                            println!(
-                                "➡️ {}",
-                                Yellow.paint(
-                                    Message::deserialize(get_content_from_buffer(
-                                        &buffer,
-                                        number_of_bytes
-                                    ))
-                                    .content
-                                )
-                            );
+                            println!("➡️ {}", Yellow.paint(message.decrypt(key.clone())));
                         }
                         Err(_) => {
                             eprintln!("{}", ERROR_MESSAGES[0]);
