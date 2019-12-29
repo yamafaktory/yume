@@ -1,3 +1,4 @@
+use ansi_term::Colour::Red;
 use base64::{decode, encode};
 use ring::{digest, hmac};
 use std::fmt;
@@ -34,11 +35,17 @@ impl Key {
             Some(value) => value,
             None => generate_random_array(),
         };
-
-        Key {
+        let key = Key {
             value,
             secret: hmac::Key::new(hmac::HMAC_SHA512, value.as_ref()),
-        }
+        };
+
+        // Print the newly generated key for reuse.
+        println!(); // new line for readability
+        println!("{}", key);
+        println!();
+
+        key
     }
 
     pub fn encode_message_signature(&self, message: Vec<u8>) -> String {
@@ -73,6 +80,6 @@ impl Key {
 
 impl fmt::Display for Key {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", self.base64_encode())
+        write!(fmt, "{}", Red.paint(self.base64_encode()))
     }
 }
