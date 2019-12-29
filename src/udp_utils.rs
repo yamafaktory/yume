@@ -1,4 +1,5 @@
-use crate::config::{CLIENT_PORT, ERROR_MESSAGES, SERVER_PORT, TIMEOUT};
+use crate::config::{CLIENT_PORT, SERVER_PORT, TIMEOUT};
+use crate::error::throw;
 use crate::key::Key;
 use crate::message::Message;
 
@@ -26,11 +27,12 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
 
                 match key.verify_message_signature(&message) {
                     Ok(_) => println!("⬅️ {}", Purple.paint(message.decrypt(key.clone()))),
-                    Err(error) => eprintln!("{}", error),
+                    Err(_) => throw(101),
                 }
 
                 match socket.send_to(&buffer[..number_of_bytes], &origin).await {
                     Ok(sent) => {
+                        // TODO
                         // println!(
                         //     "Sent {} out of {} bytes to {}",
                         //     Purple.paint(sent.to_string().as_str()),
@@ -38,7 +40,7 @@ pub async fn start_udp_server(peers_ip: Arc<(String, String)>, key: Arc<Key>) {
                         //     Purple.paint(peer.to_string())
                         // );
                     }
-                    Err(_) => eprint!("Error!"),
+                    Err(_) => throw(202),
                 }
             }
         },
@@ -76,15 +78,13 @@ pub async fn send_udp_message(peers_ip: Arc<(String, String)>, content: &str, ke
 
                             println!("➡️ {}", Yellow.paint(message.decrypt(key.clone())));
                         }
-                        Err(_) => {
-                            eprintln!("{}", ERROR_MESSAGES[0]);
-                        }
+                        Err(_) => throw(201),
                     }
                 }
-                Err(_) => println!("Error message not sent"),
+                Err(_) => throw(202),
             }
         }
-        Err(error) => println!("{}", error),
+        Err(error) => eprintln!("{}", error),
     }
 }
 
@@ -107,7 +107,7 @@ pub async fn start_udp_client(peers_ip: Arc<(String, String)>, key: Arc<Key>) ->
 
                 line.clear();
             }
-            Err(_) => eprintln!("gnii"),
+            Err(_) => throw(301),
         }
     }
 }

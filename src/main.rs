@@ -1,8 +1,10 @@
 mod config;
 mod key;
+mod error;
 mod message;
 mod stdin_utils;
 mod udp_utils;
+mod utils;
 
 use crate::key::Key;
 use crate::stdin_utils::prompt;

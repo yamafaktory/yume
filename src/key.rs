@@ -1,8 +1,9 @@
 use base64::{decode, encode};
-use ring::{digest, hmac, rand};
+use ring::{digest, hmac};
 use std::fmt;
 
 use crate::message::Message;
+use crate::utils::generate_random_array;
 
 pub struct Key {
     pub value: [u8; digest::SHA512_OUTPUT_LEN],
@@ -31,7 +32,7 @@ impl Key {
     pub fn new(value: Option<[u8; digest::SHA512_OUTPUT_LEN]>) -> Self {
         let value = match value {
             Some(value) => value,
-            None => Key::generate_hmac_value(),
+            None => generate_random_array(),
         };
 
         Key {
@@ -41,14 +42,21 @@ impl Key {
     }
 
     pub fn encode_message_signature(&self, message: Vec<u8>) -> String {
-        encode(&hmac::sign(&self.secret, message.as_slice()).as_ref().to_vec())
+        encode(
+            &hmac::sign(&self.secret, message.as_slice())
+                .as_ref()
+                .to_vec(),
+        )
     }
 
-    pub fn generate_hmac_value() -> [u8; digest::SHA512_OUTPUT_LEN] {
-        let random = rand::SystemRandom::new();
-        let key_value: [u8; digest::SHA512_OUTPUT_LEN] = rand::generate(&random).unwrap().expose();
+    pub fn get_half_key_value(&self) -> [u8; 32] {
+        // Resize key value from 64 to 32 to match GenericArray!
+        let mut half_key_value = [0; 32];
+        let to_array = &self.value[..half_key_value.len()];
 
-        key_value
+        half_key_value.copy_from_slice(&self.value[..to_array.len()]);
+
+        half_key_value
     }
 
     pub fn verify_message_signature(&self, message: &Message) -> Result<(), String> {

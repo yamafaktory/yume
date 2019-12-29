@@ -1,5 +1,4 @@
-
 pub const CLIENT_PORT: i32 = 3000;
-pub const ERROR_MESSAGES: [&str; 1] = ["Timeout: can't connect to peer"];
+pub const NONCE_LENGTH: usize = 12;
 pub const SERVER_PORT: i32 = 3001;
 pub const TIMEOUT: u64 = 5;
