@@ -16,6 +16,10 @@ use async_std::task;
 use std::env::args;
 use std::sync::Arc;
 
+// use crossterm::{cursor, execute, style::Print, terminal, ExecutableCommand};
+// use std::io::{stdout, Write};
+
+
 fn get_peers() -> Result<Peers, String> {
     if args().len() != 3 {
         return Err(String::from("Peer IP is missing"));
@@ -24,7 +28,59 @@ fn get_peers() -> Result<Peers, String> {
     Ok(Peers::new(args().nth(1).unwrap(), args().nth(2).unwrap()))
 }
 
+// fn read_line() -> (R<String>) {
+//     terminal::enable_raw_mode()?;
+//     execute!(
+//         stdout(),
+//         terminal::EnterAlternateScreen,
+//         // cursor::MoveTo(0, 0)
+//     )?;
+
+//     let mut line = String::new();
+
+//     while let Event::Key(KeyEvent { code, .. }) = event::read()? {
+//         match code {
+//             KeyCode::Enter => {
+//                 if line == "/quit" {
+//                     execute!(stdout(), terminal::LeaveAlternateScreen)?;
+//                     terminal::disable_raw_mode()?;
+//                     break;
+//                 }
+
+//                 execute!(
+//                     stdout(),
+//                     terminal::Clear(terminal::ClearType::CurrentLine),
+//                     cursor::MoveToColumn(0),
+//                     Print(line),
+//                     Print("\n"),
+//                     cursor::MoveToColumn(0),
+//                 );
+//                 line = String::new();
+//                 // break;
+//             }
+//             KeyCode::Char(c) => {
+//                 // print!("{}", c);
+//                 line.push(c);
+//                 execute!(stdout(), Print(c));
+//             }
+//             KeyCode::Backspace => {
+//                 line.pop();
+//                 execute!(
+//                     stdout(),
+//                     terminal::Clear(terminal::ClearType::CurrentLine),
+//                     cursor::MoveToColumn(0),
+//                     Print(line.clone()),
+//                 );
+//             }
+
+//             _ => {}
+//         }
+//     }
+//     return Ok(line);
+// }
+
 fn main() {
+    // read_line();
     task::block_on(async {
         let current_peers = get_peers();
 
@@ -69,6 +125,6 @@ fn main() {
             start_udp_server(cloned_peers, cloned_key).await;
         });
 
-        start_udp_client(peers.clone(), key).await.unwrap();
+        start_udp_client(peers.clone(), key).await;
     });
 }

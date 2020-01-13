@@ -8,32 +8,92 @@ use crate::utils::get_content_from_buffer;
 use ansi_term::Colour::{Purple, Yellow};
 use async_std::net::UdpSocket;
 use async_std::{io, task};
+use crossterm::{
+    cursor,
+    event::{self, Event, KeyCode, KeyEvent},
+    execute,
+    style::Print,
+    terminal, ExecutableCommand, Result as R,
+};
+use std::io as blocking_io;
+use std::io::{stdout, Write};
+use std::io::{BufRead, Read};
 use std::sync::Arc;
 use std::time::Duration;
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
-pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) -> Result<(), ()> {
-    let stdin = io::stdin();
+pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) {
+    // let mut line = String::new();
+
+    // loop {
+    //     // Read a line from stdin.
+    //     match io::stdin().read_line(&mut line).await {
+    //         Ok(n) => {
+    //             // End of stdin.
+    //             if n == 0 {
+    //                 return Ok(());
+    //             }
+
+    //             task::block_on(async {
+    //                 send_udp_message(Arc::clone(&peers), &line, Arc::clone(&key)).await;
+    //             });
+
+    //             line.clear();
+    //         }
+    //         Err(_) => throw(301),
+    //     }
+    // }
+
+    terminal::enable_raw_mode();
+    execute!(
+        stdout(),
+        terminal::EnterAlternateScreen,
+        // cursor::MoveTo(0, 0)
+    );
+
     let mut line = String::new();
 
-    loop {
-        // Read a line from stdin.
-        match stdin.read_line(&mut line).await {
-            Ok(n) => {
-                // End of stdin.
-                if n == 0 {
-                    return Ok(());
+    while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
+        let shared_line = Arc::new(line.clone());
+
+        match code {
+            KeyCode::Enter => {
+                if line.clone() == "/quit" {
+                    execute!(stdout(), terminal::LeaveAlternateScreen);
+                    terminal::disable_raw_mode();
+                    break;
                 }
 
                 task::block_on(async {
-                    send_udp_message(Arc::clone(&peers), &line, Arc::clone(&key)).await;
+                    send_udp_message(
+                        Arc::clone(&peers),
+                        Arc::clone(&shared_line),
+                        Arc::clone(&key),
+                    )
+                    .await;
                 });
 
-                line.clear();
+                line = String::new();
             }
-            Err(_) => throw(301),
+            KeyCode::Char(c) => {
+                line.push(c);
+                execute!(stdout(), Print(c));
+            }
+            KeyCode::Backspace => {
+                line.pop();
+                execute!(
+                    stdout(),
+                    terminal::Clear(terminal::ClearType::CurrentLine),
+                    cursor::MoveToColumn(0),
+                    Print(line.clone()),
+                );
+            }
+
+            _ => {}
         }
     }
+
+    return ();
 }
 
 /// Starts the UDP server based on a tuple of peers and a crypto key.
@@ -49,7 +109,13 @@ pub async fn start_udp_server(peers: Arc<Peers>, key: Arc<Key>) {
                     Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes));
 
                 match key.verify_message_signature(&message) {
-                    Ok(_) => println!("⬅️ {}", Purple.paint(message.decrypt(key.clone()))),
+                    Ok(_) => {
+                        println!(
+                            "{} {}",
+                            peers.display_remote(),
+                            Purple.paint(message.decrypt(key.clone()))
+                        );
+                    }
                     Err(_) => throw(101),
                 }
 
@@ -72,7 +138,7 @@ pub async fn start_udp_server(peers: Arc<Peers>, key: Arc<Key>) {
 }
 
 /// Send an UDP message to the first peer.
-pub async fn send_udp_message(peers: Arc<Peers>, content: &str, key: Arc<Key>) {
+pub async fn send_udp_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<Key>) {
     let cloned_key = key.clone();
     let message = Message::new(content.to_string(), cloned_key);
 
@@ -100,7 +166,15 @@ pub async fn send_udp_message(peers: Arc<Peers>, content: &str, key: Arc<Key>) {
                                 number_of_bytes,
                             ));
 
-                            println!("➡️ {}", Yellow.paint(message.decrypt(key.clone())));
+                            // println!("➡️ {}", Yellow.paint(message.decrypt(key.clone())));
+                            execute!(
+                                stdout(),
+                                terminal::Clear(terminal::ClearType::CurrentLine),
+                                cursor::MoveToColumn(0),
+                                Print(message.decrypt(key.clone())),
+                                Print("\n"),
+                                cursor::MoveToColumn(0),
+                            ).unwrap();
                         }
                         Err(_) => throw(201),
                     }
