@@ -9,14 +9,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ansi_term"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -79,11 +71,6 @@ version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "byteorder"
-version = "1.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "cc"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -95,21 +82,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "chacha20"
-version = "0.2.3"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "salsa20-core 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "stream-cipher 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zeroize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "chacha20poly1305"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aead 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chacha20 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chacha20 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "poly1305 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "zeroize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -571,15 +557,6 @@ version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "salsa20-core"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "stream-cipher 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "zeroize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "scopeguard"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -866,10 +843,9 @@ name = "yume"
 version = "0.1.0"
 dependencies = [
  "aead 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-std 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chacha20poly1305 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chacha20poly1305 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossterm 0.14.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ring 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -885,7 +861,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
 "checksum aead 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4cf01b9b56e767bb57b94ebf91a58b338002963785cdd7013e21c0d4679471e4"
-"checksum ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
 "checksum anyhow 1.0.23 (registry+https://github.com/rust-lang/crates.io-index)" = "6f1072d8f55592084072d2d3cb23a4b680a8543c00f10d446118e85ad3718142"
 "checksum arc-swap 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "d7b8a9123b8027467bce0099fe556c628a53c8d83df0507084c31e9ba2e39aff"
 "checksum async-std 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0bf6039b315300e057d198b9d3ab92ee029e31c759b7f1afae538145e6f18a3e"
@@ -894,11 +869,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7"
 "checksum bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 "checksum bumpalo 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ad807f2fc2bf185eeb98ff3a901bd46dc5ad58163d0fa4577ba0d25674d71708"
-"checksum byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a7c3dd8985a7111efc5c80b44e23ecdd8c007de8ade3b96595387e812b957cf5"
 "checksum cc 1.0.47 (registry+https://github.com/rust-lang/crates.io-index)" = "aa87058dce70a3ff5621797f1506cb837edd02ac4c0ae642b4542dce802908b8"
 "checksum cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
-"checksum chacha20 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "600b18f1de4dbea5ffa2902f259038364e48420d0d6e6a60ed5a3e075c7d4efb"
-"checksum chacha20poly1305 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "23c59feefbb93fcba1597d500d4d5ffe9941d166d16131147562a30e4bec509e"
+"checksum chacha20 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bea8b86bdf2f2b18a0f28fbfed740ee395e6ba1785b4b7123c021172eaab8ef9"
+"checksum chacha20poly1305 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4d7c7def9c4e6f11a5b7525585853135689865907ca3c4c34e0a4b252fd50dd0"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum crossbeam-channel 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "acec9a3b0b3559f15aee4f90746c4e5e293b701c0f7d3925d24e01645267b68c"
 "checksum crossbeam-deque 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c3aa945d63861bfe624b55d153a39684da1e8c0bc8fba932f7ee3a3c16cea3ca"
@@ -953,7 +927,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum ring 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)" = "6747f8da1f2b1fabbee1aaa4eb8a11abf9adef0bf58a41cee45db5d59cecdfac"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 "checksum ryu 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
-"checksum salsa20-core 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2fe6cc1b9f5a5867853ade63099de70f042f7679e408d1ffe52821c9248e6e69"
 "checksum scopeguard 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b42e15e59b18a828bbf5c58ea01debb36b9b096346de35d941dcb89009f24a0d"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"

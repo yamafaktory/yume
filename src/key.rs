@@ -1,18 +1,20 @@
-use ansi_term::Colour::Red;
 use base64::{decode, encode};
+use crossterm::{cursor, execute, style::Print, style, terminal};
 use ring::{digest, hmac};
 use std::fmt;
+use std::io::{stdout, Write};
 
 use crate::message::Message;
 use crate::utils::generate_random_array;
 
+#[derive(Clone)]
 pub struct Key {
     pub value: [u8; digest::SHA512_OUTPUT_LEN],
     pub secret: hmac::Key,
 }
 
 impl Key {
-    pub fn base64_decode(value: String) -> Result<[u8; digest::SHA512_OUTPUT_LEN], String> {
+    pub fn base64_decode(value: String) -> Result<[u8; digest::SHA512_OUTPUT_LEN], u16> {
         match decode(&value) {
             Ok(value) => {
                 let mut key_value = [0; digest::SHA512_OUTPUT_LEN];
@@ -22,7 +24,7 @@ impl Key {
 
                 Ok(key_value)
             }
-            Err(_) => Err(String::from("Can't decode key!")),
+            Err(_) => Err(102),
         }
     }
 
@@ -41,9 +43,17 @@ impl Key {
         };
 
         // Print the newly generated key for reuse.
-        println!(); // new line for readability
-        println!("{}", key);
-        println!();
+        execute!(
+            stdout(),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+            cursor::MoveToColumn(0),
+            style::SetForegroundColor(style::Color::DarkRed),
+            Print(key.clone()),
+            style::SetForegroundColor(style::Color::Reset),
+            Print("\n"),
+            cursor::MoveToColumn(0),
+        )
+        .unwrap();
 
         key
     }
@@ -80,6 +90,6 @@ impl Key {
 
 impl fmt::Display for Key {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", Red.paint(self.base64_encode()))
+        write!(fmt, "{}", self.base64_encode())
     }
 }

@@ -1,11 +1,3 @@
-use crate::config::{CLIENT_PORT, SERVER_PORT, TIMEOUT};
-use crate::error::throw;
-use crate::key::Key;
-use crate::message::Message;
-use crate::peers::Peers;
-use crate::utils::get_content_from_buffer;
-
-use ansi_term::Colour::{Purple, Yellow};
 use async_std::net::UdpSocket;
 use async_std::{io, task};
 use crossterm::{
@@ -13,87 +5,64 @@ use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     execute,
     style::Print,
-    terminal, ExecutableCommand, Result as R,
+    terminal,
 };
-use std::io as blocking_io;
 use std::io::{stdout, Write};
-use std::io::{BufRead, Read};
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::config::{CLIENT_PORT, SERVER_PORT, TIMEOUT};
+use crate::error::throw;
+use crate::key::Key;
+use crate::message::Message;
+use crate::peers::Peers;
+use crate::utils::get_content_from_buffer;
+use crate::terminal::{println};
+
 /// Starts the UDP client based on a tuple of peers and a crypto key.
 pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) {
-    // let mut line = String::new();
-
-    // loop {
-    //     // Read a line from stdin.
-    //     match io::stdin().read_line(&mut line).await {
-    //         Ok(n) => {
-    //             // End of stdin.
-    //             if n == 0 {
-    //                 return Ok(());
-    //             }
-
-    //             task::block_on(async {
-    //                 send_udp_message(Arc::clone(&peers), &line, Arc::clone(&key)).await;
-    //             });
-
-    //             line.clear();
-    //         }
-    //         Err(_) => throw(301),
-    //     }
-    // }
-
-    terminal::enable_raw_mode();
-    execute!(
-        stdout(),
-        terminal::EnterAlternateScreen,
-        // cursor::MoveTo(0, 0)
-    );
-
-    let mut line = String::new();
+    let mut characters = String::new();
 
     while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
-        let shared_line = Arc::new(line.clone());
+        let shared_characters = Arc::new(characters.clone());
 
         match code {
             KeyCode::Enter => {
-                if line.clone() == "/quit" {
-                    execute!(stdout(), terminal::LeaveAlternateScreen);
-                    terminal::disable_raw_mode();
+                if characters.clone() == "/quit" {
+                    execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
+                    terminal::disable_raw_mode().unwrap();
                     break;
                 }
 
                 task::block_on(async {
                     send_udp_message(
                         Arc::clone(&peers),
-                        Arc::clone(&shared_line),
+                        Arc::clone(&shared_characters),
                         Arc::clone(&key),
                     )
                     .await;
                 });
 
-                line = String::new();
+                characters = String::new();
             }
-            KeyCode::Char(c) => {
-                line.push(c);
-                execute!(stdout(), Print(c));
+            KeyCode::Char(character) => {
+                characters.push(character);
+                execute!(stdout(), Print(character)).unwrap();
             }
             KeyCode::Backspace => {
-                line.pop();
+                characters.pop();
                 execute!(
                     stdout(),
                     terminal::Clear(terminal::ClearType::CurrentLine),
                     cursor::MoveToColumn(0),
-                    Print(line.clone()),
-                );
+                    Print(characters.clone()),
+                )
+                .unwrap();
             }
 
             _ => {}
         }
     }
-
-    return ();
 }
 
 /// Starts the UDP server based on a tuple of peers and a crypto key.
@@ -110,11 +79,11 @@ pub async fn start_udp_server(peers: Arc<Peers>, key: Arc<Key>) {
 
                 match key.verify_message_signature(&message) {
                     Ok(_) => {
-                        println!(
+                        println(format!(
                             "{} {}",
                             peers.display_remote(),
-                            Purple.paint(message.decrypt(key.clone()))
-                        );
+                            message.decrypt(key.clone())
+                        ));
                     }
                     Err(_) => throw(101),
                 }
@@ -154,6 +123,16 @@ pub async fn send_udp_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<
                 Ok(_) => {
                     let mut buffer = vec![0u8; 1024];
 
+                    execute!(
+                        stdout(),
+                        cursor::Hide,
+                        terminal::Clear(terminal::ClearType::CurrentLine),
+                        cursor::MoveToColumn(0),
+                        Print("⏳"),
+                        cursor::MoveToColumn(0),
+                    )
+                    .unwrap();
+
                     match io::timeout(Duration::from_secs(TIMEOUT), async {
                         socket.recv_from(&mut buffer).await
                     })
@@ -166,7 +145,6 @@ pub async fn send_udp_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<
                                 number_of_bytes,
                             ));
 
-                            // println!("➡️ {}", Yellow.paint(message.decrypt(key.clone())));
                             execute!(
                                 stdout(),
                                 terminal::Clear(terminal::ClearType::CurrentLine),
@@ -174,7 +152,9 @@ pub async fn send_udp_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<
                                 Print(message.decrypt(key.clone())),
                                 Print("\n"),
                                 cursor::MoveToColumn(0),
-                            ).unwrap();
+                                cursor::Show,
+                            )
+                            .unwrap();
                         }
                         Err(_) => throw(201),
                     }
