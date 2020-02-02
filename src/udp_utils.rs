@@ -1,4 +1,5 @@
 use async_std::net::UdpSocket;
+use async_std::sync::{Receiver, Sender};
 use async_std::{io, task};
 use crossterm::{
     cursor,
@@ -16,11 +17,15 @@ use crate::error::throw;
 use crate::key::Key;
 use crate::message::Message;
 use crate::peers::Peers;
+use crate::terminal::println;
 use crate::utils::get_content_from_buffer;
-use crate::terminal::{println};
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
-pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) {
+pub async fn start_udp_client(
+    peers: Arc<Peers>,
+    key: Arc<Key>,
+    (sender, receiver): (Sender<Option<String>>, Receiver<Option<String>>),
+) {
     let mut characters = String::new();
 
     while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
@@ -29,6 +34,7 @@ pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) {
         match code {
             KeyCode::Enter => {
                 if characters.clone() == "/quit" {
+                    // TODO: peer should see it!
                     execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
                     terminal::disable_raw_mode().unwrap();
                     break;
@@ -66,7 +72,11 @@ pub async fn start_udp_client(peers: Arc<Peers>, key: Arc<Key>) {
 }
 
 /// Starts the UDP server based on a tuple of peers and a crypto key.
-pub async fn start_udp_server(peers: Arc<Peers>, key: Arc<Key>) {
+pub async fn start_udp_server(
+    peers: Arc<Peers>,
+    key: Arc<Key>,
+    (sender, receiver): (Sender<Option<String>>, Receiver<Option<String>>),
+) {
     let mut buffer = vec![0u8; 1024];
     let key = &key;
 
@@ -79,11 +89,9 @@ pub async fn start_udp_server(peers: Arc<Peers>, key: Arc<Key>) {
 
                 match key.verify_message_signature(&message) {
                     Ok(_) => {
-                        println(format!(
-                            "{} {}",
-                            peers.display_remote(),
-                            message.decrypt(key.clone())
-                        ));
+                        sender.send(Some(String::from("test"))).await;
+                        peers.display_remote();
+                        println(false, message.decrypt(key.clone()));
                     }
                     Err(_) => throw(101),
                 }

@@ -27,5 +27,5 @@ pub fn throw(code: u16) {
         _ => Error::Unknown,
     };
 
-    println(error.to_string());
+    println(true, error.to_string());
 }

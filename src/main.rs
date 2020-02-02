@@ -13,6 +13,7 @@ use crate::peers::Peers;
 use crate::terminal::{enter_secondary_screen, prompt};
 use crate::udp_utils::{start_udp_client, start_udp_server};
 
+use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
 use std::env::args;
 use std::sync::Arc;
@@ -67,10 +68,13 @@ fn main() {
         let key = Arc::new(key);
         let cloned_key = key.clone();
 
+        let sender_receiver: (Sender<Option<String>>, Receiver<Option<String>>) = channel(1);
+        let cloned_sender_receiver = sender_receiver.clone();
+
         task::spawn(async move {
-            start_udp_server(cloned_peers, cloned_key).await;
+            start_udp_server(cloned_peers, cloned_key, sender_receiver).await;
         });
 
-        start_udp_client(peers.clone(), key).await;
+        start_udp_client(peers.clone(), key, cloned_sender_receiver).await;
     });
 }

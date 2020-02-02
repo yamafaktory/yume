@@ -1,3 +1,6 @@
+use crossterm::{execute, style};
+use std::io::{stdout, Write};
+
 #[derive(Clone)]
 pub struct Peers {
     pub local: String,
@@ -9,7 +12,13 @@ impl Peers {
         Peers { local, remote }
     }
 
-    pub fn display_remote(&self) -> String {
-        self.local.clone()
+    pub fn display_remote(&self) {
+        execute!(
+            stdout(),
+            style::SetForegroundColor(style::Color::DarkMagenta),
+            style::Print(format!("{} ", self.local.clone())),
+            style::SetForegroundColor(style::Color::White)
+        )
+        .unwrap();
     }
 }

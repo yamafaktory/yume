@@ -1,7 +1,7 @@
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
-    execute,
+    execute, queue,
     style::Print,
     terminal,
 };
@@ -13,22 +13,33 @@ pub fn enter_secondary_screen() {
     execute!(stdout(), terminal::EnterAlternateScreen,).unwrap();
 }
 
-pub fn println(line: String) {
-    execute!(
-        stdout(),
-        terminal::Clear(terminal::ClearType::CurrentLine),
-        cursor::MoveToColumn(0),
+pub fn println(clear_line: bool, line: String) {
+    let mut stdout = stdout();
+
+    if clear_line {
+        queue!(
+            stdout,
+            terminal::Clear(terminal::ClearType::CurrentLine),
+            cursor::MoveToColumn(0),
+        )
+        .unwrap();
+    }
+
+    queue!(
+        stdout,
         Print(format!("{}\n", line)),
         cursor::MoveToColumn(0),
     )
     .unwrap();
+
+    stdout.flush().unwrap();
 }
 
 pub fn prompt(question: Option<String>) -> Result<String, String> {
     let mut characters = String::new();
 
     if let Some(text) = question {
-        println(text);
+        println(true, text);
     }
 
     while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
