@@ -13,7 +13,7 @@ pub fn enter_secondary_screen() {
     execute!(stdout(), terminal::EnterAlternateScreen,).unwrap();
 }
 
-pub fn println(clear_line: bool, line: String) {
+pub fn println(line: String, clear_line: bool) {
     let mut stdout = stdout();
 
     if clear_line {
@@ -39,7 +39,7 @@ pub fn prompt(question: Option<String>) -> Result<String, String> {
     let mut characters = String::new();
 
     if let Some(text) = question {
-        println(true, text);
+        println(text, true);
     }
 
     while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
@@ -61,8 +61,9 @@ pub fn prompt(question: Option<String>) -> Result<String, String> {
                 )
                 .unwrap();
             }
-            _ => {}
+            _ => (),
         }
     }
+
     Ok(characters)
 }

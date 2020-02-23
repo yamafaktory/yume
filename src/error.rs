@@ -1,4 +1,4 @@
-use crate::terminal::{println};
+use crate::terminal::println;
 
 use thiserror::Error;
 
@@ -27,5 +27,5 @@ pub fn throw(code: u16) {
         _ => Error::Unknown,
     };
 
-    println(true, error.to_string());
+    println(error.to_string(), true);
 }

@@ -1,17 +1,19 @@
 mod config;
 mod error;
+mod io;
 mod key;
 mod message;
 mod peers;
 mod terminal;
-mod udp_utils;
+mod udp;
 mod utils;
 
 use crate::error::throw;
+use crate::io::Line;
 use crate::key::Key;
 use crate::peers::Peers;
 use crate::terminal::{enter_secondary_screen, prompt};
-use crate::udp_utils::{start_udp_client, start_udp_server};
+use crate::udp::{start_client, start_server};
 
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
@@ -68,13 +70,14 @@ fn main() {
         let key = Arc::new(key);
         let cloned_key = key.clone();
 
-        let sender_receiver: (Sender<Option<String>>, Receiver<Option<String>>) = channel(1);
+        let sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)> =
+        Arc::new(channel(1));
         let cloned_sender_receiver = sender_receiver.clone();
 
         task::spawn(async move {
-            start_udp_server(cloned_peers, cloned_key, sender_receiver).await;
+            start_server(cloned_peers, cloned_key, sender_receiver).await;
         });
 
-        start_udp_client(peers.clone(), key, cloned_sender_receiver).await;
+        start_client(peers.clone(), key, cloned_sender_receiver).await;
     });
 }
