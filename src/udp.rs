@@ -1,7 +1,6 @@
 use async_std::io;
 use async_std::net::UdpSocket;
 use async_std::sync::{Receiver, Sender};
-use crossterm::terminal::size;
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
@@ -46,16 +45,13 @@ pub async fn start_client(
                     _ => (),
                 };
 
-                let content_length = characters.clone().len() as f64;
-                let terminal_width = size().unwrap().0 as f64;
-                let lines_of_characters = (content_length / terminal_width).ceil() as u8;
                 let mut stdout = stdout();
 
-                for line in 0..lines_of_characters {
+                for line in 0..Line::get_content_lines_length(characters) {
                     queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),).unwrap();
 
                     if line > 0 {
-                        queue!(stdout, cursor::MoveUp(1),).unwrap();
+                        queue!(stdout, cursor::MoveUp(1)).unwrap();
                     }
                 }
 
@@ -100,12 +96,9 @@ pub async fn start_client(
                     .send(Some(Line::new(characters.clone())))
                     .await;
 
-                let content_length = characters.clone().len() as f64;
-                let terminal_width = size().unwrap().0 as f64;
-                let lines_of_characters = (content_length / terminal_width).ceil() as u8;
                 let mut stdout = stdout();
 
-                for line in 0..lines_of_characters {
+                for line in 0..Line::get_content_lines_length(characters.clone()) {
                     queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),).unwrap();
 
                     if line > 0 {
@@ -145,7 +138,6 @@ pub async fn start_server(
                                     let mut replay_line = None;
                                     let mut stdout = stdout();
 
-                                    // TODO: remove displayed line, do stuff, put it back!
                                     if !sender_receiver.1.is_empty() {
                                         if let Some(line) = sender_receiver.1.recv().await.unwrap()
                                         {
@@ -228,7 +220,7 @@ pub async fn send_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<Key>
                         cursor::Hide,
                         terminal::Clear(terminal::ClearType::CurrentLine),
                         cursor::MoveToColumn(0),
-                        Print("⏳"),
+                        Print("Sending message..."),
                         cursor::MoveToColumn(0),
                     )
                     .unwrap();
