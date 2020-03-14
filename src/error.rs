@@ -4,13 +4,15 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("🔑 Crypto error: {0}!")]
+    #[error("Crypto error: {0}!")]
     Crypto(String),
-    #[error("💣 Network error: {0}!")]
+    #[error("Message error: {0}!")]
+    Message(String),
+    #[error("Network error: {0}!")]
     Network(String),
-    #[error("⌨️ Stdin error: {0}!")]
+    #[error("Stdin error: {0}!")]
     Stdin(String),
-    #[error("❓Unknown error")]
+    #[error("Unknown error")]
     Unknown,
 }
 
@@ -24,6 +26,8 @@ pub fn throw(code: u16) {
         202 => Error::Network(String::from("message not sent")),
         // Stdin errors:
         301 => Error::Stdin(String::from("can't read from command line")),
+        // Message errors:
+        401 => Error::Stdin(String::from("can't deserialize message")),
         _ => Error::Unknown,
     };
 

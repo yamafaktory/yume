@@ -44,7 +44,7 @@ fn main() {
         enter_secondary_screen();
 
         let secret_key = prompt(Some(String::from(
-            "🔑 Enter secret key or click enter to generate a new one:",
+            "Enter secret key or click enter to generate a new one:",
         )));
 
         let key = match secret_key {

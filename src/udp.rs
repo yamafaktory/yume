@@ -1,6 +1,7 @@
+use async_std::io;
 use async_std::net::UdpSocket;
 use async_std::sync::{Receiver, Sender};
-use async_std::{io, task};
+use crossterm::terminal::size;
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
@@ -12,7 +13,7 @@ use std::io::{stdout, Write};
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::config::{CLIENT_PORT, SERVER_PORT, TIMEOUT};
+use crate::config::{BUFFER_SIZE, CLIENT_PORT, SERVER_PORT, TIMEOUT};
 use crate::error::throw;
 use crate::io::Line;
 use crate::key::Key;
@@ -38,13 +39,25 @@ pub async fn start_client(
                 match characters.as_str() {
                     "/help" => println(String::from("TODO"), false),
                     "/quit" => {
-                        execute!(stdout(), terminal::LeaveAlternateScreen)
-                            .unwrap();
+                        execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
                         terminal::disable_raw_mode().unwrap();
                         break;
                     }
                     _ => (),
                 };
+
+                let content_length = characters.clone().len() as f64;
+                let terminal_width = size().unwrap().0 as f64;
+                let lines_of_characters = (content_length / terminal_width).ceil() as u8;
+                let mut stdout = stdout();
+
+                for line in 0..lines_of_characters {
+                    queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),).unwrap();
+
+                    if line > 0 {
+                        queue!(stdout, cursor::MoveUp(1),).unwrap();
+                    }
+                }
 
                 // Push a noop value in the channel.
                 if !sender_receiver.1.is_empty() {
@@ -87,13 +100,22 @@ pub async fn start_client(
                     .send(Some(Line::new(characters.clone())))
                     .await;
 
-                execute!(
-                    stdout(),
-                    terminal::Clear(terminal::ClearType::CurrentLine),
-                    cursor::MoveToColumn(0),
-                    Print(characters.clone()),
-                )
-                .unwrap();
+                let content_length = characters.clone().len() as f64;
+                let terminal_width = size().unwrap().0 as f64;
+                let lines_of_characters = (content_length / terminal_width).ceil() as u8;
+                let mut stdout = stdout();
+
+                for line in 0..lines_of_characters {
+                    queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),).unwrap();
+
+                    if line > 0 {
+                        queue!(stdout, cursor::MoveUp(1),).unwrap();
+                    }
+                }
+                queue!(stdout, cursor::MoveToColumn(0)).unwrap();
+                queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),).unwrap();
+                queue!(stdout, Print(characters.clone()),).unwrap();
+                stdout.flush().unwrap();
             }
 
             _ => {}
@@ -107,86 +129,75 @@ pub async fn start_server(
     key: Arc<Key>,
     sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)>,
 ) {
-    let mut buffer = vec![0u8; 1024];
+    let mut buffer = vec![0u8; BUFFER_SIZE];
     let key = &key;
 
-    match UdpSocket::bind(
-        [peers.local.as_str(), ":", &SERVER_PORT.to_string()].join(""),
-    )
-    .await
-    {
+    match UdpSocket::bind([peers.local.as_str(), ":", &SERVER_PORT.to_string()].join("")).await {
         Ok(socket) => {
             loop {
                 if let Ok(received) = socket.recv_from(&mut buffer).await {
                     let (number_of_bytes, origin) = received;
-                    let message = Message::deserialize(
-                        get_content_from_buffer(&buffer, number_of_bytes),
-                    );
+                    match Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes)) {
+                        Ok(message) => {
+                            // Display the message or throw an error.
+                            match key.verify_message_signature(&message) {
+                                Ok(_) => {
+                                    let mut replay_line = None;
+                                    let mut stdout = stdout();
 
-                    // Display the message or throw an error.
-                    match key.verify_message_signature(&message) {
-                        Ok(_) => {
-                            let mut replay_line = None;
-                            let mut stdout = stdout();
+                                    // TODO: remove displayed line, do stuff, put it back!
+                                    if !sender_receiver.1.is_empty() {
+                                        if let Some(line) = sender_receiver.1.recv().await.unwrap()
+                                        {
+                                            let line = Arc::new(line);
+                                            let cloned_line = line.clone();
 
-                            // TODO: remove displayed line, do stuff, put it back!
-                            if !sender_receiver.1.is_empty() {
-                                if let Some(line) =
-                                    sender_receiver.1.recv().await.unwrap()
-                                {
-                                    let line = Arc::new(line);
-                                    let cloned_line = line.clone();
+                                            replay_line = Some(line);
 
-                                    replay_line = Some(line);
+                                            for position in 0..cloned_line.length {
+                                                if position > 0 {
+                                                    queue!(stdout, cursor::MoveUp(1),).unwrap();
+                                                }
 
-                                    for position in 0..cloned_line.length {
-                                        if position > 0 {
-                                            queue!(
-                                                stdout,
-                                                cursor::MoveUp(1),
-                                            )
-                                            .unwrap();
+                                                queue!(
+                                                    stdout,
+                                                    terminal::Clear(
+                                                        terminal::ClearType::CurrentLine
+                                                    ),
+                                                    cursor::MoveToColumn(0)
+                                                )
+                                                .unwrap();
+                                            }
                                         }
-
-                                        queue!(
-                                            stdout,
-                                            terminal::Clear(
-                                                terminal::ClearType::CurrentLine
-                                            ),
-                                            cursor::MoveToColumn(0)
-                                        )
-                                        .unwrap();
                                     }
+
+                                    // Display prepended peer I.P. and decrypted message.
+                                    peers.display_remote();
+                                    println(message.decrypt(key.clone()), false);
+
+                                    if let Some(line) = replay_line {
+                                        queue!(stdout, Print(&line.content)).unwrap();
+                                    }
+
+                                    stdout.flush().unwrap();
                                 }
+                                Err(_) => throw(401),
                             }
 
-                            // Display prepended peer I.P. and decrypted message.
-                            peers.display_remote();
-                            println(message.decrypt(key.clone()), false);
-
-                            if let Some(line) = replay_line {
-                                queue!(stdout, Print(&line.content)).unwrap();
+                            match socket.send_to(&buffer[..number_of_bytes], &origin).await {
+                                Ok(sent) => {
+                                    // TODO
+                                    // println!(
+                                    //     "Sent {} out of {} bytes to {}",
+                                    //     Purple.paint(sent.to_string().as_str()),
+                                    //     Purple.paint(n.to_string().as_str()),
+                                    //     Purple.paint(peer.to_string())
+                                    // );
+                                }
+                                Err(_) => throw(202),
                             }
-
-                            stdout.flush().unwrap();
                         }
                         Err(_) => throw(101),
-                    }
-
-                    match socket
-                        .send_to(&buffer[..number_of_bytes], &origin)
-                        .await
-                    {
-                        Ok(sent) => {
-                            // TODO
-                            // println!(
-                            //     "Sent {} out of {} bytes to {}",
-                            //     Purple.paint(sent.to_string().as_str()),
-                            //     Purple.paint(n.to_string().as_str()),
-                            //     Purple.paint(peer.to_string())
-                            // );
-                        }
-                        Err(_) => throw(202),
                     }
                 }
             }
@@ -196,30 +207,21 @@ pub async fn start_server(
 }
 
 /// Send an UDP message to the first peer.
-pub async fn send_message(
-    peers: Arc<Peers>,
-    content: Arc<String>,
-    key: Arc<Key>,
-) {
+pub async fn send_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<Key>) {
     let cloned_key = key.clone();
     let message = Message::new(content.to_string(), cloned_key);
 
-    match UdpSocket::bind(
-        [peers.local.as_str(), ":", &CLIENT_PORT.to_string()].join(""),
-    )
-    .await
-    {
+    match UdpSocket::bind([peers.local.as_str(), ":", &CLIENT_PORT.to_string()].join("")).await {
         Ok(socket) => {
             match socket
                 .send_to(
                     message.serialize().as_bytes(),
-                    [peers.remote.as_str(), ":", &SERVER_PORT.to_string()]
-                        .join(""),
+                    [peers.remote.as_str(), ":", &SERVER_PORT.to_string()].join(""),
                 )
                 .await
             {
                 Ok(_) => {
-                    let mut buffer = vec![0u8; 1024];
+                    let mut buffer = vec![0u8; BUFFER_SIZE];
 
                     execute!(
                         stdout(),
@@ -238,24 +240,25 @@ pub async fn send_message(
                     {
                         Ok(received) => {
                             let number_of_bytes = received.0;
-                            let message =
-                                Message::deserialize(get_content_from_buffer(
-                                    &buffer,
-                                    number_of_bytes,
-                                ));
 
-                            execute!(
-                                stdout(),
-                                terminal::Clear(
-                                    terminal::ClearType::CurrentLine
-                                ),
-                                cursor::MoveToColumn(0),
-                                Print(message.decrypt(key.clone())),
-                                Print("\n"),
-                                cursor::MoveToColumn(0),
-                                cursor::Show,
-                            )
-                            .unwrap();
+                            match Message::deserialize(get_content_from_buffer(
+                                &buffer,
+                                number_of_bytes,
+                            )) {
+                                Ok(message) => {
+                                    execute!(
+                                        stdout(),
+                                        terminal::Clear(terminal::ClearType::CurrentLine),
+                                        cursor::MoveToColumn(0),
+                                        Print(message.decrypt(key.clone())),
+                                        Print("\n"),
+                                        cursor::MoveToColumn(0),
+                                        cursor::Show,
+                                    )
+                                    .unwrap();
+                                }
+                                Err(_) => throw(401),
+                            }
                         }
                         Err(_) => throw(201),
                     }

@@ -17,7 +17,8 @@ pub struct Message {
 
 impl Message {
     pub fn new(content: String, key: Arc<Key>) -> Self {
-        let key_value = GenericArray::clone_from_slice(&key.get_half_key_value());
+        let key_value =
+            GenericArray::clone_from_slice(&key.get_half_key_value());
         let aead = ChaCha20Poly1305::new(key_value);
         let nonce_array = generate_random_array();
         let nonce = GenericArray::from_slice(&nonce_array[0..NONCE_LENGTH]);
@@ -34,7 +35,8 @@ impl Message {
     }
 
     pub fn decrypt(&self, key: Arc<Key>) -> String {
-        let key_value = GenericArray::clone_from_slice(&key.get_half_key_value());
+        let key_value =
+            GenericArray::clone_from_slice(&key.get_half_key_value());
         let aead = ChaCha20Poly1305::new(key_value);
 
         let mut nonce_from_vec = [0; NONCE_LENGTH];
@@ -56,7 +58,10 @@ impl Message {
         serde_json::to_string(self).unwrap()
     }
 
-    pub fn deserialize(message: String) -> Message {
-        serde_json::from_str(message.as_str()).unwrap()
+    pub fn deserialize(message: String) -> Result<Message, ()> {
+        match serde_json::from_str(message.as_str()) {
+            Ok(message) => Ok(message),
+            Err(_) => Err(()),
+        }
     }
 }
