@@ -26,8 +26,9 @@ pub fn throw(code: u16) {
         202 => Error::Network(String::from("message not sent")),
         // Stdin errors:
         301 => Error::Stdin(String::from("can't read from command line")),
+        302 => Error::Stdin(String::from("resizing is unsupported")),
         // Message errors:
-        401 => Error::Stdin(String::from("can't deserialize message")),
+        401 => Error::Message(String::from("can't deserialize message")),
         _ => Error::Unknown,
     };
 

@@ -1,23 +1,30 @@
+mod client;
 mod config;
 mod error;
 mod io;
 mod key;
 mod message;
 mod peers;
+mod server;
 mod terminal;
-mod udp;
 mod utils;
 
+use crate::client::start as start_client;
 use crate::error::throw;
 use crate::io::Line;
 use crate::key::Key;
 use crate::peers::Peers;
+use crate::server::start as start_server;
 use crate::terminal::{enter_secondary_screen, prompt};
-use crate::udp::{start_client, start_server};
 
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
+use crossterm::{
+    cursor, execute,
+    terminal::{Clear, ClearType},
+};
 use std::env::args;
+use std::io::{stdout, Write};
 use std::sync::Arc;
 
 fn get_peers() -> Result<Peers, String> {
@@ -44,7 +51,7 @@ fn main() {
         enter_secondary_screen();
 
         let secret_key = prompt(Some(String::from(
-            "Enter secret key or click enter to generate a new one:",
+            "Enter secret key or press enter to generate a new one:",
         )));
 
         let key = match secret_key {
@@ -52,7 +59,11 @@ fn main() {
                 None
             } else {
                 match Key::base64_decode(secret_key) {
-                    Ok(secret_key) => Some(secret_key),
+                    Ok(secret_key) => {
+                        execute!(stdout(), Clear(ClearType::All), cursor::MoveToColumn(0)).unwrap();
+
+                        Some(secret_key)
+                    }
                     Err(code) => {
                         throw(code);
 
@@ -71,7 +82,7 @@ fn main() {
         let cloned_key = key.clone();
 
         let sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)> =
-        Arc::new(channel(1));
+            Arc::new(channel(1));
         let cloned_sender_receiver = sender_receiver.clone();
 
         task::spawn(async move {

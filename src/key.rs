@@ -1,5 +1,5 @@
 use base64::{decode, encode};
-use crossterm::{cursor, execute, style::Print, style, terminal};
+use crossterm::{cursor, execute, style, style::Print, terminal};
 use ring::{digest, hmac};
 use std::fmt;
 use std::io::{stdout, Write};
@@ -33,6 +33,7 @@ impl Key {
     }
 
     pub fn new(value: Option<[u8; digest::SHA512_OUTPUT_LEN]>) -> Self {
+        let is_new_key = value.is_none();
         let value = match value {
             Some(value) => value,
             None => generate_random_array(),
@@ -43,17 +44,19 @@ impl Key {
         };
 
         // Print the newly generated key for reuse.
-        execute!(
-            stdout(),
-            terminal::Clear(terminal::ClearType::CurrentLine),
-            cursor::MoveToColumn(0),
-            style::SetForegroundColor(style::Color::DarkRed),
-            Print(key.clone()),
-            style::SetForegroundColor(style::Color::Reset),
-            Print("\n"),
-            cursor::MoveToColumn(0),
-        )
-        .unwrap();
+        if is_new_key {
+            execute!(
+                stdout(),
+                terminal::Clear(terminal::ClearType::CurrentLine),
+                cursor::MoveToColumn(0),
+                style::SetForegroundColor(style::Color::DarkRed),
+                Print(key.clone()),
+                style::SetForegroundColor(style::Color::Reset),
+                Print("\n"),
+                cursor::MoveToColumn(0),
+            )
+            .unwrap();
+        }
 
         key
     }
