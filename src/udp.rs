@@ -149,7 +149,7 @@ pub async fn start_server(
                                             // We want to replay the line in the channel afterwards, store it.
                                             replay_line = Some(arc_line);
 
-                                            // Push it back in case we in need to replay it again!
+                                            // Push it back in case we need to replay it again!
                                             sender_receiver.0.send(Some(raw_line)).await;
 
                                             for position in 0..arc_cloned_line.length {
