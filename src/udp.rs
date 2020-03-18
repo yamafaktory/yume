@@ -130,6 +130,7 @@ pub async fn start_server(
             loop {
                 if let Ok(received) = socket.recv_from(&mut buffer).await {
                     let (number_of_bytes, origin) = received;
+
                     match Message::deserialize(get_content_from_buffer(&buffer, number_of_bytes)) {
                         Ok(message) => {
                             // Display the message or throw an error.
@@ -141,12 +142,17 @@ pub async fn start_server(
                                     if !sender_receiver.1.is_empty() {
                                         if let Some(line) = sender_receiver.1.recv().await.unwrap()
                                         {
-                                            let line = Arc::new(line);
-                                            let cloned_line = line.clone();
+                                            let raw_line = line.clone();
+                                            let arc_line = Arc::new(line);
+                                            let arc_cloned_line = arc_line.clone();
 
-                                            replay_line = Some(line);
+                                            // We want to replay the line in the channel afterwards, store it.
+                                            replay_line = Some(arc_line);
 
-                                            for position in 0..cloned_line.length {
+                                            // Push it back in case we in need to replay it again!
+                                            sender_receiver.0.send(Some(raw_line)).await;
+
+                                            for position in 0..arc_cloned_line.length {
                                                 if position > 0 {
                                                     queue!(stdout, cursor::MoveUp(1),).unwrap();
                                                 }

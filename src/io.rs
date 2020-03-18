@@ -1,5 +1,6 @@
 use crossterm::terminal::size;
 
+#[derive(Clone)]
 pub struct Line {
     pub content: String,
     pub length: u8,
