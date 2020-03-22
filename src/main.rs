@@ -10,12 +10,13 @@ mod terminal;
 mod utils;
 
 use crate::client::start as start_client;
+use crate::config::{DESCRIPTION, VERSION};
 use crate::error::throw;
 use crate::io::Line;
 use crate::key::Key;
 use crate::peers::Peers;
 use crate::server::start as start_server;
-use crate::terminal::{enter_secondary_screen, prompt};
+use crate::terminal::{enter_secondary_screen, println, prompt};
 
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
@@ -50,6 +51,9 @@ fn main() {
 
         enter_secondary_screen();
 
+        println(String::from(DESCRIPTION), true);
+        println(format!("Version {}\n", VERSION), true);
+
         let secret_key = prompt(Some(String::from(
             "Enter secret key or press enter to generate a new one:",
         )));
@@ -59,11 +63,7 @@ fn main() {
                 None
             } else {
                 match Key::base64_decode(secret_key) {
-                    Ok(secret_key) => {
-                        execute!(stdout(), Clear(ClearType::All), cursor::MoveToColumn(0)).unwrap();
-
-                        Some(secret_key)
-                    }
+                    Ok(secret_key) => Some(secret_key),
                     Err(code) => {
                         throw(code);
 
@@ -77,6 +77,8 @@ fn main() {
                 return;
             }
         };
+
+        println(String::from("\nYou can start typing!\n"), true);
 
         let key = Arc::new(key);
         let cloned_key = key.clone();
