@@ -19,6 +19,7 @@ use crate::io::Line;
 use crate::key::Key;
 use crate::message::Message;
 use crate::peers::Peers;
+use crate::terminal::println;
 use crate::utils::get_content_from_buffer;
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
@@ -51,33 +52,35 @@ pub async fn start(
                                 terminal::disable_raw_mode().unwrap();
                                 break;
                             }
-                            _ => (),
+                            _ => println(String::from("Unknown command!"), true),
                         };
 
-                        let mut stdout = stdout();
+                        if characters.starts_with("/") == false {
+                            let mut stdout = stdout();
 
-                        for line in 0..Line::get_content_lines_length(characters) {
-                            queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),)
-                                .unwrap();
+                            for line in 0..Line::get_content_lines_length(characters) {
+                                queue!(stdout, terminal::Clear(terminal::ClearType::CurrentLine),)
+                                    .unwrap();
 
-                            if line > 0 {
-                                queue!(stdout, cursor::MoveUp(1)).unwrap();
+                                if line > 0 {
+                                    queue!(stdout, cursor::MoveUp(1)).unwrap();
+                                }
                             }
-                        }
 
-                        // Push a noop value in the channel.
-                        if !sender_receiver.1.is_empty() {
-                            sender_receiver.1.recv().await;
-                        }
-                        sender_receiver.0.send(None).await;
+                            // Push a noop value in the channel.
+                            if !sender_receiver.1.is_empty() {
+                                sender_receiver.1.recv().await;
+                            }
+                            sender_receiver.0.send(None).await;
 
-                        // Send message.
-                        send_message(
-                            Arc::clone(&peers),
-                            Arc::clone(&shared_characters),
-                            Arc::clone(&key),
-                        )
-                        .await;
+                            // Send message.
+                            send_message(
+                                Arc::clone(&peers),
+                                Arc::clone(&shared_characters),
+                                Arc::clone(&key),
+                            )
+                            .await;
+                        }
 
                         // Reset afterwards.
                         characters = String::new();
