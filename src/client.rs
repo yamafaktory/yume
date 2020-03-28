@@ -14,11 +14,11 @@ use std::time::Duration;
 
 use crate::config::{BUFFER_SIZE, CLIENT_PORT, SERVER_PORT, TIMEOUT};
 use crate::error::throw;
+use crate::help::render as render_help;
 use crate::io::Line;
 use crate::key::Key;
 use crate::message::Message;
 use crate::peers::Peers;
-use crate::terminal::println;
 use crate::utils::get_content_from_buffer;
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
@@ -45,7 +45,7 @@ pub async fn start(
                 match code {
                     KeyCode::Enter => {
                         match characters.as_str() {
-                            "/help" => println(String::from("TODO"), false),
+                            "/help" => render_help().await,
                             "/quit" => {
                                 execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
                                 terminal::disable_raw_mode().unwrap();

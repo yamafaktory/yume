@@ -9,8 +9,8 @@ use crate::utils::generate_random_array;
 
 #[derive(Clone)]
 pub struct Key {
-    pub value: [u8; digest::SHA512_OUTPUT_LEN],
     pub secret: hmac::Key,
+    pub value: [u8; digest::SHA512_OUTPUT_LEN],
 }
 
 impl Key {
@@ -39,8 +39,8 @@ impl Key {
             None => generate_random_array(),
         };
         let key = Key {
-            value,
             secret: hmac::Key::new(hmac::HMAC_SHA512, value.as_ref()),
+            value,
         };
 
         // Print the newly generated key for reuse.

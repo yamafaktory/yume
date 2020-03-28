@@ -80,15 +80,7 @@ pub async fn start(
                             }
 
                             match socket.send_to(&buffer[..number_of_bytes], &origin).await {
-                                Ok(sent) => {
-                                    // TODO
-                                    // println!(
-                                    //     "Sent {} out of {} bytes to {}",
-                                    //     Purple.paint(sent.to_string().as_str()),
-                                    //     Purple.paint(n.to_string().as_str()),
-                                    //     Purple.paint(peer.to_string())
-                                    // );
-                                }
+                                Ok(_) => (),
                                 Err(_) => throw(202),
                             }
                         }

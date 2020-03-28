@@ -1,6 +1,7 @@
 mod client;
 mod config;
 mod error;
+mod help;
 mod io;
 mod key;
 mod message;
@@ -20,12 +21,7 @@ use crate::terminal::{enter_secondary_screen, println, prompt};
 
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
-use crossterm::{
-    cursor, execute,
-    terminal::{Clear, ClearType},
-};
 use std::env::args;
-use std::io::{stdout, Write};
 use std::sync::Arc;
 
 fn get_peers() -> Result<Peers, String> {
