@@ -1,14 +1,44 @@
-use crate::terminal::println;
+use crossterm::{
+    cursor,
+    execute, queue, style,
+    style::Print,
+    terminal,
+};
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+use std::io::{stdout, Write};
 
-const HELP: &'static str = "/help display help";
-const QUIT: &'static str = "/quit quit application";
+lazy_static! {
+    static ref COMMANDS: HashMap<&'static str, &'static str> =
+        vec![("help", "display help"), ("quit", "quit application"),]
+            .into_iter()
+            .collect();
+}
 
 pub async fn render() {
-    println(String::from(""), true);
+    let mut stdout = stdout();
 
-    for line in vec![HELP, QUIT] {
-        println(String::from(line), true);
+    queue!(
+        stdout,
+        terminal::Clear(terminal::ClearType::CurrentLine),
+        Print("\n")
+    )
+    .unwrap();
+
+    for (key, value) in COMMANDS.iter() {
+        execute!(
+            stdout,
+            cursor::MoveToColumn(0),
+            style::SetForegroundColor(style::Color::DarkYellow),
+            style::Print(format!("{} ", key)),
+            style::SetForegroundColor(style::Color::White),
+            style::Print(format!("{}", value)),
+            Print("\n"),
+        )
+        .unwrap();
     }
 
-    println(String::from(""), true);
+    queue!(stdout, Print("\n"), cursor::MoveToColumn(0)).unwrap();
+
+    stdout.flush().unwrap();
 }

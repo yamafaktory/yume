@@ -45,17 +45,17 @@ pub async fn start(
             Event::Key(KeyEvent { code, .. }) => {
                 match code {
                     KeyCode::Enter => {
-                        match characters.as_str() {
-                            "/help" => render_help().await,
-                            "/quit" => {
-                                execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
-                                terminal::disable_raw_mode().unwrap();
-                                break;
-                            }
-                            _ => println(String::from("Unknown command!"), true),
-                        };
-
-                        if characters.starts_with("/") == false {
+                        if characters.starts_with("/") {
+                            match characters.as_str() {
+                                "/help" => render_help().await,
+                                "/quit" => {
+                                    execute!(stdout(), terminal::LeaveAlternateScreen).unwrap();
+                                    terminal::disable_raw_mode().unwrap();
+                                    break;
+                                }
+                                _ => println(String::from("Unknown command!"), true),
+                            };
+                        } else {
                             let mut stdout = stdout();
 
                             for line in 0..Line::get_content_lines_length(characters) {
