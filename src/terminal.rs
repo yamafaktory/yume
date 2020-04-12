@@ -45,6 +45,8 @@ pub fn prompt(question: Option<String>) -> Result<String, String> {
     while let Event::Key(KeyEvent { code, .. }) = event::read().unwrap() {
         match code {
             KeyCode::Enter => {
+                execute!(stdout(), Print("\n")).unwrap();
+
                 break;
             }
             KeyCode::Char(character) => {

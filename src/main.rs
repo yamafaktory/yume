@@ -32,61 +32,61 @@ fn get_peers() -> Result<Peers, String> {
     Ok(Peers::new(args().nth(1).unwrap(), args().nth(2).unwrap()))
 }
 
-fn main() {
-    task::block_on(async {
-        let current_peers = get_peers();
+#[async_std::main]
+async fn main() -> std::io::Result<()> {
+    let current_peers = get_peers();
 
-        if let Err(error) = current_peers {
+    if let Err(error) = current_peers {
+        eprintln!("{}", error);
+
+        return Ok(());
+    }
+
+    let peers = Arc::new(current_peers.unwrap());
+    let cloned_peers = peers.clone();
+
+    enter_secondary_screen();
+
+    println(String::from(DESCRIPTION), true);
+    println(format!("Version {}\n", VERSION), true);
+
+    let secret_key = prompt(Some(String::from(
+        "Enter secret key or press enter to generate a new one:",
+    )));
+
+    let key = match secret_key {
+        Ok(secret_key) => Key::new(if secret_key.is_empty() {
+            None
+        } else {
+            match Key::base64_decode(secret_key) {
+                Ok(secret_key) => Some(secret_key),
+                Err(code) => {
+                    throw(code);
+
+                    return Ok(());
+                }
+            }
+        }),
+        Err(error) => {
             eprintln!("{}", error);
 
-            return;
+            return Ok(());
         }
+    };
 
-        let peers = Arc::new(current_peers.unwrap());
-        let cloned_peers = peers.clone();
+    println(String::from("\nYou can start typing!\n"), true);
 
-        enter_secondary_screen();
+    let key = Arc::new(key);
+    let cloned_key = key.clone();
 
-        println(String::from(DESCRIPTION), true);
-        println(format!("Version {}\n", VERSION), true);
+    let sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)> = Arc::new(channel(1));
+    let cloned_sender_receiver = sender_receiver.clone();
 
-        let secret_key = prompt(Some(String::from(
-            "Enter secret key or press enter to generate a new one:",
-        )));
-
-        let key = match secret_key {
-            Ok(secret_key) => Key::new(if secret_key.is_empty() {
-                None
-            } else {
-                match Key::base64_decode(secret_key) {
-                    Ok(secret_key) => Some(secret_key),
-                    Err(code) => {
-                        throw(code);
-
-                        return;
-                    }
-                }
-            }),
-            Err(error) => {
-                eprintln!("{}", error);
-
-                return;
-            }
-        };
-
-        println(String::from("\nYou can start typing!\n"), true);
-
-        let key = Arc::new(key);
-        let cloned_key = key.clone();
-
-        let sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)> =
-            Arc::new(channel(1));
-        let cloned_sender_receiver = sender_receiver.clone();
-
-        task::spawn(async move {
-            start_server(cloned_peers, cloned_key, sender_receiver).await;
-        });
-
-        start_client(peers.clone(), key, cloned_sender_receiver).await;
+    task::spawn(async move {
+        start_server(cloned_peers, cloned_key, sender_receiver).await;
     });
+
+    start_client(peers.clone(), key, cloned_sender_receiver).await;
+
+    Ok(())
 }
