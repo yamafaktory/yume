@@ -189,10 +189,16 @@ pub async fn send_message(peers: Arc<Peers>, content: Arc<String>, key: Arc<Key>
                                     )
                                     .unwrap();
                                 }
-                                Err(_) => throw(401),
+                                Err(_) => {
+                                    execute!(stdout(), cursor::Show,).unwrap();
+                                    throw(401);
+                                }
                             }
                         }
-                        Err(_) => throw(201),
+                        Err(_) => {
+                            execute!(stdout(), cursor::Show,).unwrap();
+                            throw(201);
+                        }
                     }
                 }
                 Err(_) => throw(202),

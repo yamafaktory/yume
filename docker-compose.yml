@@ -14,6 +14,7 @@ networks:
 
 services:
   ping:
+    container_name: ping
     environment:
       - CARGO_HOME=/yume
     image: rustlang/rust:nightly
@@ -28,6 +29,7 @@ services:
       - ./:/yume
 
   pong:
+    container_name: pong
     environment:
       - CARGO_HOME=/yume
     image: rustlang/rust:nightly

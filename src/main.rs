@@ -21,28 +21,25 @@ use crate::terminal::{enter_secondary_screen, println, prompt};
 
 use async_std::sync::{channel, Receiver, Sender};
 use async_std::task;
-use std::env::args;
 use std::sync::Arc;
+use structopt::StructOpt;
 
-fn get_peers() -> Result<Peers, String> {
-    if args().len() != 3 {
-        return Err(String::from("Peer IP is missing"));
-    }
-
-    Ok(Peers::new(args().nth(1).unwrap(), args().nth(2).unwrap()))
+#[derive(StructOpt, Debug)]
+struct Opt {
+    #[structopt(
+        help = "local and remote IPv6 peer addresses",
+        min_values = 2,
+        required = true
+    )]
+    peers: Vec<String>,
 }
 
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
-    let current_peers = get_peers();
+    let peers_from_args = Opt::from_args().peers;
+    let current_peers = Peers::new(peers_from_args[0].clone(), peers_from_args[1].clone());
 
-    if let Err(error) = current_peers {
-        eprintln!("{}", error);
-
-        return Ok(());
-    }
-
-    let peers = Arc::new(current_peers.unwrap());
+    let peers = Arc::new(current_peers);
     let cloned_peers = peers.clone();
 
     enter_secondary_screen();
