@@ -28,7 +28,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn peers() {
+    fn check_peers() {
         let local_peer = String::from("2001:3984:3989::10");
         let remote_peer = String::from("2001:3984:3989::20");
         let local_peer_clone = local_peer.clone();
