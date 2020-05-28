@@ -1,11 +1,12 @@
 use base64::{decode, encode};
 use crossterm::{cursor, execute, style, style::Print, terminal};
 use ring::{digest, hmac};
-use std::fmt;
-use std::io::{stdout, Write};
+use std::{
+    fmt,
+    io::{stdout, Write},
+};
 
-use crate::message::Message;
-use crate::utils::generate_random_array;
+use crate::{message::Message, utils::generate_random_array};
 
 #[derive(Clone)]
 pub struct Key {
@@ -28,15 +29,16 @@ impl Key {
         }
     }
 
-    pub fn base64_encode(&self) -> String {
-        encode(&self.value.to_vec())
-    }
+    pub fn base64_encode(&self) -> String { encode(&self.value.to_vec()) }
 
     pub fn new(value: Option<[u8; digest::SHA512_OUTPUT_LEN]>) -> Self {
-        let is_new_key = value.is_none();
+        let mut is_new_key = false;
         let value = match value {
             Some(value) => value,
-            None => generate_random_array(),
+            None => {
+                is_new_key = true;
+                generate_random_array()
+            }
         };
         let key = Key {
             secret: hmac::Key::new(hmac::HMAC_SHA512, value.as_ref()),
@@ -94,5 +96,29 @@ impl Key {
 impl fmt::Display for Key {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}", self.base64_encode())
+    }
+}
+
+#[cfg(test)]
+mod utils {
+    use super::*;
+
+    #[test]
+    fn test_key() {
+        let key = Key::new(None);
+        let encoded_key = Key::base64_encode(&key);
+
+        assert_eq!(
+            encoded_key.len(),
+            (4.0 * (digest::SHA512_OUTPUT_LEN as f64 / 3.0).ceil()) as usize
+        );
+
+        let decoded_key = Key::base64_decode(encoded_key).unwrap();
+        let mut half_decoded_key = [0; 32];
+        let to_array = &decoded_key[..half_decoded_key.len()];
+
+        half_decoded_key.copy_from_slice(&decoded_key[..to_array.len()]);
+
+        assert_eq!(half_decoded_key, key.get_half_key_value());
     }
 }
