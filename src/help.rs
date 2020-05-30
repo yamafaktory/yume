@@ -1,12 +1,9 @@
-use crossterm::{
-    cursor,
-    execute, queue, style,
-    style::Print,
-    terminal,
-};
+use crossterm::{cursor, execute, queue, style, style::Print, terminal};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::io::{stdout, Write};
+use std::{
+    collections::HashMap,
+    io::{stdout, Write},
+};
 
 lazy_static! {
     static ref COMMANDS: HashMap<&'static str, &'static str> =

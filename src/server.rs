@@ -1,17 +1,23 @@
-use async_std::net::UdpSocket;
-use async_std::sync::{Receiver, Sender};
+use async_std::{
+    net::UdpSocket,
+    sync::{Receiver, Sender},
+};
 use crossterm::{cursor, queue, style::Print, terminal};
-use std::io::{stdout, Write};
-use std::sync::Arc;
+use std::{
+    io::{stdout, Write},
+    sync::Arc,
+};
 
-use crate::config::{BUFFER_SIZE, SERVER_PORT};
-use crate::error::throw;
-use crate::io::Line;
-use crate::key::Key;
-use crate::message::Message;
-use crate::peers::Peers;
-use crate::terminal::println;
-use crate::utils::get_content_from_buffer;
+use crate::{
+    config::{BUFFER_SIZE, SERVER_PORT},
+    error::throw,
+    io::Line,
+    key::Key,
+    message::Message,
+    peers::Peers,
+    terminal::println,
+    utils::get_content_from_buffer,
+};
 
 /// Starts the UDP server based on a tuple of peers and a crypto key.
 pub async fn start(
@@ -43,7 +49,8 @@ pub async fn start(
                                             let arc_line = Arc::new(line);
                                             let arc_cloned_line = arc_line.clone();
 
-                                            // We want to replay the line in the channel afterwards, store it.
+                                            // We want to replay the line in the channel afterwards,
+                                            // store it.
                                             replay_line = Some(arc_line);
 
                                             // Push it back in case we need to replay it again!

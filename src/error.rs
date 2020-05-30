@@ -12,12 +12,12 @@ pub enum Error {
     Network(String),
     #[error("Stdin error: {0}!")]
     Stdin(String),
-    #[error("Unknown error")]
+    #[error("Unknown error!")]
     Unknown,
 }
 
-pub fn throw(code: u16) {
-    let error = match code {
+fn _throw(code: u16) -> Error {
+    match code {
         // Crypto errors:
         101 => Error::Crypto(String::from("can't verify message signature")),
         102 => Error::Crypto(String::from("can't decode key")),
@@ -30,7 +30,22 @@ pub fn throw(code: u16) {
         // Message errors:
         401 => Error::Message(String::from("can't deserialize message")),
         _ => Error::Unknown,
-    };
+    }
+}
 
-    println(error.to_string(), true);
+pub fn throw(code: u16) { println(_throw(code).to_string(), true); }
+
+#[cfg(test)]
+mod utils {
+    use super::*;
+
+    #[test]
+    fn test_error() {
+        assert_eq!(
+            _throw(101).to_string(),
+            String::from("Crypto error: can't verify message signature!")
+        );
+
+        assert_eq!(_throw(999).to_string(), String::from("Unknown error!"));
+    }
 }
