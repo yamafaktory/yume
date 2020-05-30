@@ -108,10 +108,7 @@ pub async fn start(
                         characters.pop();
 
                         if !sender_receiver.1.is_empty() {
-                            match sender_receiver.1.recv().await {
-                                Ok(_) => (),
-                                Err(_) => (),
-                            };
+                            let _ = sender_receiver.1.recv().await;
                         }
                         sender_receiver
                             .0
