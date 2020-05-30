@@ -1,6 +1,8 @@
-use async_std::io;
-use async_std::net::UdpSocket;
-use async_std::sync::{Receiver, Sender};
+use async_std::{
+    io,
+    net::UdpSocket,
+    sync::{Receiver, Sender},
+};
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
@@ -8,19 +10,23 @@ use crossterm::{
     style::Print,
     terminal,
 };
-use std::io::{stdout, Write};
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    io::{stdout, Write},
+    sync::Arc,
+    time::Duration,
+};
 
-use crate::config::{BUFFER_SIZE, CLIENT_PORT, SERVER_PORT, TIMEOUT};
-use crate::error::throw;
-use crate::help::render as render_help;
-use crate::io::Line;
-use crate::key::Key;
-use crate::message::Message;
-use crate::peers::Peers;
-use crate::terminal::println;
-use crate::utils::get_content_from_buffer;
+use crate::{
+    config::{BUFFER_SIZE, CLIENT_PORT, SERVER_PORT, TIMEOUT},
+    error::throw,
+    help::render as render_help,
+    io::Line,
+    key::Key,
+    message::Message,
+    peers::Peers,
+    terminal::println,
+    utils::get_content_from_buffer,
+};
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
 pub async fn start(
@@ -69,7 +75,7 @@ pub async fn start(
 
                             // Push a noop value in the channel.
                             if !sender_receiver.1.is_empty() {
-                                sender_receiver.1.recv().await;
+                                let _ = sender_receiver.1.recv().await;
                             }
                             sender_receiver.0.send(None).await;
 
@@ -89,7 +95,7 @@ pub async fn start(
                         characters.push(character);
 
                         if !sender_receiver.1.is_empty() {
-                            sender_receiver.1.recv().await;
+                            let _ = sender_receiver.1.recv().await;
                         }
                         sender_receiver
                             .0
@@ -102,7 +108,10 @@ pub async fn start(
                         characters.pop();
 
                         if !sender_receiver.1.is_empty() {
-                            sender_receiver.1.recv().await;
+                            match sender_receiver.1.recv().await {
+                                Ok(_) => (),
+                                Err(_) => (),
+                            };
                         }
                         sender_receiver
                             .0
