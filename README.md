@@ -2,9 +2,6 @@
 
 > An encrypted peer-to-peer IPv6 UDP messaging terminal client built with Rust
 
-This is an early project, this readme is a draft!
-A lot of things are still missing: Github actions, tests, better documentation, etc.
-
 ## Installation
 
 ```sh
