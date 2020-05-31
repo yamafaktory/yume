@@ -8,7 +8,7 @@ keywords = ["cli", "crypto", "networking", "chat", "p2p"]
 license = "MIT"
 name = "yume"
 repository = "https://github.com/yamafaktory/yume"
-version = "0.1.1"
+version = "0.2.0"
 
 [badges]
 # https://github.com/rust-lang/crates.io/pull/1838
