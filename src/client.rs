@@ -1,8 +1,4 @@
-use async_std::{
-    io,
-    net::UdpSocket,
-    sync::{Receiver, Sender},
-};
+use async_std::{io, net::UdpSocket};
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent},
@@ -25,15 +21,12 @@ use crate::{
     message::Message,
     peers::Peers,
     terminal::println,
+    types::SenderReceiver,
     utils::get_content_from_buffer,
 };
 
 /// Starts the UDP client based on a tuple of peers and a crypto key.
-pub async fn start(
-    peers: Arc<Peers>,
-    key: Arc<Key>,
-    sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)>,
-) {
+pub async fn start(peers: Arc<Peers>, key: Arc<Key>, sender_receiver: SenderReceiver) {
     let mut characters = String::new();
 
     loop {
