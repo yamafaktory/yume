@@ -1,4 +1,4 @@
-# yume
+# yume ![Build Status](https://github.com/yamafaktory/yume/workflows/ci/badge.svg)
 
 > An encrypted peer-to-peer IPv6 UDP messaging terminal client built with Rust
 
@@ -16,7 +16,7 @@ To establish a connection between two peers, you need to start the client and pr
 yume 2001:3984:3989::10 2001:3984:3989::20
 ```
 
-The first peer need to follow the instructions and press enter to get a new secret key.
+The first peer needs to follow the instructions and press enter to get a new secret key.
 It's up to you to share this key in a secure way, the client does not share the key with the other connected peer!
 
 ```sh
