@@ -51,7 +51,7 @@ pub async fn start(
             Event::Key(KeyEvent { code, .. }) => {
                 match code {
                     KeyCode::Enter => {
-                        if characters.starts_with("/") {
+                        if characters.starts_with('/') {
                             match characters.as_str() {
                                 "/help" => render_help().await,
                                 "/quit" => {

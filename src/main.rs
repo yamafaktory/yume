@@ -8,18 +8,19 @@ mod message;
 mod peers;
 mod server;
 mod terminal;
+mod types;
 mod utils;
 
 use crate::client::start as start_client;
 use crate::config::{DESCRIPTION, VERSION};
 use crate::error::throw;
-use crate::io::Line;
 use crate::key::Key;
 use crate::peers::Peers;
 use crate::server::start as start_server;
 use crate::terminal::{enter_secondary_screen, println, prompt};
+use crate::types::SenderReceiver;
 
-use async_std::sync::{channel, Receiver, Sender};
+use async_std::sync::channel;
 use async_std::task;
 use std::sync::Arc;
 use structopt::StructOpt;
@@ -76,7 +77,7 @@ async fn main() -> std::io::Result<()> {
     let key = Arc::new(key);
     let cloned_key = key.clone();
 
-    let sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)> = Arc::new(channel(1));
+    let sender_receiver: SenderReceiver = Arc::new(channel(1));
     let cloned_sender_receiver = sender_receiver.clone();
 
     task::spawn(async move {
