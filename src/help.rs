@@ -29,7 +29,7 @@ pub async fn render() {
             style::SetForegroundColor(style::Color::DarkYellow),
             style::Print(format!("{} ", key)),
             style::SetForegroundColor(style::Color::White),
-            style::Print(format!("{}", value)),
+            style::Print(value),
             Print("\n"),
         )
         .unwrap();

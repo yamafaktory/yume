@@ -1,7 +1,4 @@
-use async_std::{
-    net::UdpSocket,
-    sync::{Receiver, Sender},
-};
+use async_std::net::UdpSocket;
 use crossterm::{cursor, queue, style::Print, terminal};
 use std::{
     io::{stdout, Write},
@@ -11,20 +8,16 @@ use std::{
 use crate::{
     config::{BUFFER_SIZE, SERVER_PORT},
     error::throw,
-    io::Line,
     key::Key,
     message::Message,
     peers::Peers,
     terminal::println,
+    types::SenderReceiver,
     utils::get_content_from_buffer,
 };
 
 /// Starts the UDP server based on a tuple of peers and a crypto key.
-pub async fn start(
-    peers: Arc<Peers>,
-    key: Arc<Key>,
-    sender_receiver: Arc<(Sender<Option<Line>>, Receiver<Option<Line>>)>,
-) {
+pub async fn start(peers: Arc<Peers>, key: Arc<Key>, sender_receiver: SenderReceiver) {
     let mut buffer = vec![0u8; BUFFER_SIZE];
     let key = &key;
 
